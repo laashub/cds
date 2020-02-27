@@ -215,7 +215,7 @@ func (api *API) postResyncPRAsCodeHandler() service.Handler {
 			}
 		}
 
-		if _, _, err := sync.SyncAsCodeEvent(ctx, api.mustDB(), api.Cache, *proj, app, getAPIConsumer(ctx).AuthentifiedUser); err != nil {
+		if _, _, err := sync.SyncAsCodeEvent(ctx, api.mustDB(), api.Cache, *proj, *app, getAPIConsumer(ctx).AuthentifiedUser); err != nil {
 			return err
 		}
 		return nil

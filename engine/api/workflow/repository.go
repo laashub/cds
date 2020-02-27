@@ -100,11 +100,11 @@ func extractWorkflow(ctx context.Context, db *gorp.DbMap, store cache.Store, p *
 	if errP != nil {
 		return allMsg, sdk.WrapError(errP, "unable to get workflow from file")
 	}
-	*w = *workflowPushed
 
 	if w.Name != workflowPushed.Name {
 		log.Debug("workflow.extractWorkflow> Workflow has been renamed from %s to %s", w.Name, workflowPushed.Name)
 	}
+	*w = *workflowPushed
 
 	return append(allMsgs, allMsg...), nil
 }
