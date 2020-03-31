@@ -126,14 +126,15 @@
             </div>
         </app-scrollview>
         <ng-container>
-            <app-workflow-node-run-param #workflowStartParam [project]="project" [workflow]="detailedWorkflow"
-                [nodeToRun]="detailedWorkflow.workflow_data.node"></app-workflow-node-run-param>
+            <app-workflow-node-run-param #workflowStartParam ></app-workflow-node-run-param>
         </ng-container>
     </div>
 </ng-template>
 <ng-template #loadingPart>
     <div class="ui text active loader">{{ 'common_loading_workflow' | translate }}</div>
 </ng-template>
+
+<!-- EDIT AS CODE -->
 <ng-container *ngIf="detailedWorkflow?.from_repository">
     <app-update-ascode
             [project]="project"

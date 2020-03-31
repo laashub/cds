@@ -14,7 +14,7 @@ import (
 )
 
 // UpdateOutgoingHookRunStatus updates the status and callback of a outgoing hook run, and then it reprocess the whole workflow
-func UpdateOutgoingHookRunStatus(ctx context.Context, db gorp.SqlExecutor, store cache.Store, proj *sdk.Project, wr *sdk.WorkflowRun, hookRunID string, callback sdk.WorkflowNodeOutgoingHookRunCallback) (*ProcessorReport, error) {
+func UpdateOutgoingHookRunStatus(ctx context.Context, db gorp.SqlExecutor, store cache.Store, proj sdk.Project, wr *sdk.WorkflowRun, hookRunID string, callback sdk.WorkflowNodeOutgoingHookRunCallback) (*ProcessorReport, error) {
 	ctx, end := observability.Span(ctx, "workflow.UpdateOutgoingHookRunStatus")
 	defer end()
 
@@ -62,26 +62,25 @@ loop:
 	}
 
 	report1, _, err := processNodeOutGoingHook(ctx, db, store, proj, wr, mapNodes, nil, node, int(nodeRun.SubNumber), nil)
-	report.Merge(ctx, report1, err) //nolint
+	report.Merge(ctx, report1)
 	if err != nil {
-		return nil, sdk.WrapError(err, "Unable to processNodeOutGoingHook")
+		return nil, sdk.WrapError(err, "unable to processNodeOutGoingHook")
 	}
 
 	oldStatus := wr.Status
 	r1, err := computeAndUpdateWorkflowRunStatus(ctx, db, wr)
 	if err != nil {
-		return report, sdk.WrapError(err, "processNodeOutGoingHook> Unable to compute workflow run status")
+		return report, sdk.WrapError(err, "unable to compute workflow run status")
 	}
-	report.Merge(ctx, r1, nil) // nolint
+	report.Merge(ctx, r1)
 	if wr.Status != oldStatus {
 		report.Add(ctx, wr)
 	}
 	return report, nil
-
 }
 
 // UpdateParentWorkflowRun updates the workflow which triggered the current workflow
-func UpdateParentWorkflowRun(ctx context.Context, dbFunc func() *gorp.DbMap, store cache.Store, wr *sdk.WorkflowRun, parentProj *sdk.Project, parentWR *sdk.WorkflowRun) (*ProcessorReport, error) {
+func UpdateParentWorkflowRun(ctx context.Context, dbFunc func() *gorp.DbMap, store cache.Store, wr *sdk.WorkflowRun, parentProj sdk.Project, parentWR *sdk.WorkflowRun) (*ProcessorReport, error) {
 	_, end := observability.Span(ctx, "workflow.UpdateParentWorkflowRun")
 	defer end()
 

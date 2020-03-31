@@ -49,7 +49,6 @@ import (
 	"github.com/ovh/cds/engine/api/worker"
 	"github.com/ovh/cds/engine/api/workermodel"
 	"github.com/ovh/cds/engine/api/workflow"
-	"github.com/ovh/cds/engine/api/workflowtemplate"
 	"github.com/ovh/cds/engine/service"
 	"github.com/ovh/cds/sdk"
 	"github.com/ovh/cds/sdk/cdsclient"
@@ -649,9 +648,6 @@ func (a *API) Serve(ctx context.Context) error {
 	sdk.GoRoutine(ctx, "audit.ComputeWorkflowAudit", func(ctx context.Context) {
 		audit.ComputeWorkflowAudit(ctx, a.DBConnectionFactory.GetDBMap)
 	}, a.PanicDump())
-	sdk.GoRoutine(ctx, "workflowtemplate.ComputeAudit", func(ctx context.Context) {
-		workflowtemplate.ComputeAudit(ctx, a.DBConnectionFactory.GetDBMap)
-	}, a.PanicDump())
 	sdk.GoRoutine(ctx, "auditCleanerRoutine(ctx", func(ctx context.Context) {
 		auditCleanerRoutine(ctx, a.DBConnectionFactory.GetDBMap)
 	})
@@ -677,6 +673,30 @@ func (a *API) Serve(ctx context.Context) error {
 
 	migrate.Add(ctx, sdk.Migration{Name: "RefactorApplicationKeys", Release: "0.44.0", Blocker: true, Automatic: true, ExecFunc: func(ctx context.Context) error {
 		return migrate.RefactorApplicationKeys(ctx, a.DBConnectionFactory.GetDBMap())
+	}})
+
+	migrate.Add(ctx, sdk.Migration{Name: "RefactorProjectKeys", Release: "0.44.0", Blocker: true, Automatic: true, ExecFunc: func(ctx context.Context) error {
+		return migrate.RefactorProjectKeys(ctx, a.DBConnectionFactory.GetDBMap())
+	}})
+
+	migrate.Add(ctx, sdk.Migration{Name: "RefactorApplicationVariables", Release: "0.44.0", Blocker: true, Automatic: true, ExecFunc: func(ctx context.Context) error {
+		return migrate.RefactorApplicationVariables(ctx, a.DBConnectionFactory.GetDBMap())
+	}})
+
+	migrate.Add(ctx, sdk.Migration{Name: "RefactorEnvironmentKeys", Release: "0.44.0", Blocker: true, Automatic: true, ExecFunc: func(ctx context.Context) error {
+		return migrate.RefactorEnvironmentKeys(ctx, a.DBConnectionFactory.GetDBMap())
+	}})
+
+	migrate.Add(ctx, sdk.Migration{Name: "RefactorProjectVariables", Release: "0.44.0", Blocker: true, Automatic: true, ExecFunc: func(ctx context.Context) error {
+		return migrate.RefactorProjectVariables(ctx, a.DBConnectionFactory.GetDBMap())
+	}})
+
+	migrate.Add(ctx, sdk.Migration{Name: "RefactorEnvironmentVariables", Release: "0.44.0", Blocker: true, Automatic: true, ExecFunc: func(ctx context.Context) error {
+		return migrate.RefactorEnvironmentVariables(ctx, a.DBConnectionFactory.GetDBMap())
+	}})
+
+	migrate.Add(ctx, sdk.Migration{Name: "CleanDuplicateNodes", Release: "0.44.0", Blocker: false, Automatic: true, ExecFunc: func(ctx context.Context) error {
+		return migrate.CleanDuplicateNodes(ctx, a.DBConnectionFactory.GetDBMap())
 	}})
 
 	isFreshInstall, errF := version.IsFreshInstall(a.mustDB())

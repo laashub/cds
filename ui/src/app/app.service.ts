@@ -2,12 +2,12 @@ import { Injectable } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
-import { AsCodeEventData } from 'app/model/ascode.model';
+import { WorkflowNodeRun, WorkflowRun } from 'app/model/workflow.run.model';
 import { AsCodeEvent } from 'app/store/ascode.action';
 import { UpdateMaintenance } from 'app/store/cds.action';
 import cloneDeep from 'lodash-es/cloneDeep';
 import { filter, first } from 'rxjs/operators';
-import { Broadcast, BroadcastEvent } from './model/broadcast.model';
+import { Broadcast } from './model/broadcast.model';
 import { Event, EventType } from './model/event.model';
 import { LoadOpts } from './model/project.model';
 import { TimelineFilter } from './model/timeline.model';
@@ -66,13 +66,13 @@ export class AppService {
             return
         }
         if (event.type_event.indexOf(EventType.MAINTENANCE) === 0) {
-            this._store.dispatch(new UpdateMaintenance(event.payload['Enable']));
+            this._store.dispatch(new UpdateMaintenance(event.payload['enable']));
             return;
         }
         if (event.type_event.indexOf(EventType.ASCODE) === 0) {
             if (event.username === this._store.selectSnapshot(AuthenticationState.user).username) {
-                let e = event.payload['Event'];
-                this._store.dispatch(new AsCodeEvent({data: AsCodeEventData.FromEventsmanager(e['Data'])}));
+                let e: AsCodeEvent = <AsCodeEvent>event.payload['as_code_event'];
+                this._store.dispatch(e);
             }
             return;
         }
@@ -333,25 +333,34 @@ export class AppService {
                     this._workflowRunService
                         .getWorkflowRun(event.project_key, event.workflow_name, event.workflow_run_num)
                         .pipe(first())
-                        .subscribe(wr => this._store.dispatch(new UpdateWorkflowRunList({ workflowRun: wr })));
+                        .subscribe(wrkRun => this._store.dispatch(new UpdateWorkflowRunList({ workflowRun: wrkRun })));
                 }
                 break;
             case EventType.RUN_WORKFLOW_NODE:
-                if (this.routeParams['number'] === event.workflow_run_num.toString()) {
+                // Refresh node run if user is listening on it
+                const wnr = this._store.selectSnapshot<WorkflowNodeRun>((state) => {
+                    return state.workflow.workflowNodeRun;
+                });
+                let wnrEvent = <WorkflowNodeRun>event.payload;
+                if (wnr && wnr.id === wnrEvent.id) {
+                    this._store.dispatch(
+                        new GetWorkflowNodeRun({
+                            projectKey: event.project_key,
+                            workflowName: event.workflow_name,
+                            num: event.workflow_run_num,
+                            nodeRunID: wnr.id
+                        }));
+                }
+
+                // Refresh workflow run if user is listening on it
+                const wr = this._store.selectSnapshot<WorkflowRun>((state) => state.workflow.workflowRun);
+                if (wr && wr.num === event.workflow_run_num) {
                     this._store.dispatch(new GetWorkflowRun(
                         {
-                            projectKey: event.project_key, workflowName: event.workflow_name,
+                            projectKey: event.project_key,
+                            workflowName: event.workflow_name,
                             num: event.workflow_run_num
                         }));
-                    if (this.routeParams['nodeId'] && this.routeParams['nodeId'].toString() === event.payload['ID']) {
-                        this._store.dispatch(
-                            new GetWorkflowNodeRun({
-                                projectKey: event.project_key,
-                                workflowName: event.workflow_name,
-                                num: event.workflow_run_num,
-                                nodeRunID: this.routeParams['nodeId']
-                            }));
-                    }
                 }
                 break;
         }
@@ -363,15 +372,15 @@ export class AppService {
         }
         switch (event.type_event) {
             case EventType.BROADCAST_ADD:
-                let bEvent: BroadcastEvent = <BroadcastEvent>event.payload['Broadcast'];
+                let bEvent: Broadcast = <Broadcast>event.payload;
                 if (bEvent) {
-                    this._broadcastStore.addBroadcastInCache(Broadcast.fromEvent(bEvent));
+                    this._broadcastStore.addBroadcastInCache(bEvent);
                 }
                 break;
             case EventType.BROADCAST_UPDATE:
-                let bUpEvent: BroadcastEvent = <BroadcastEvent>event.payload['NewBroadcast'];
+                let bUpEvent: Broadcast = <Broadcast>event.payload['NewBroadcast'];
                 if (bUpEvent) {
-                    this._broadcastStore.addBroadcastInCache(Broadcast.fromEvent(bUpEvent));
+                    this._broadcastStore.addBroadcastInCache(bUpEvent);
                 }
                 break;
             case EventType.BROADCAST_DELETE:

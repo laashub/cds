@@ -37,7 +37,7 @@ func TestVariableInProject(t *testing.T) {
 		Value: "value1",
 		Type:  "PASSWORD",
 	}
-	err := project.InsertVariable(api.mustDB(), project1, var1, &sdk.AuthentifiedUser{Username: "foo"})
+	err := project.InsertVariable(api.mustDB(), project1.ID, var1, &sdk.AuthentifiedUser{Username: "foo"})
 	if err != nil {
 		t.Fatalf("cannot insert var1 in project1: %s", err)
 	}
@@ -45,19 +45,19 @@ func TestVariableInProject(t *testing.T) {
 	// 3. Test Update variable
 	var2 := var1
 	var2.Value = "value1Updated"
-	err = project.UpdateVariable(api.mustDB(), project1, var2, var1, &sdk.AuthentifiedUser{Username: "foo"})
+	err = project.UpdateVariable(api.mustDB(), project1.ID, var2, var1, &sdk.AuthentifiedUser{Username: "foo"})
 	if err != nil {
 		t.Fatalf("cannot update var1 in project1: %s", err)
 	}
 
 	// 4. Delete variable
-	err = project.DeleteVariable(api.mustDB(), project1, var1, &sdk.AuthentifiedUser{Username: "foo"})
+	err = project.DeleteVariable(api.mustDB(), project1.ID, var1, &sdk.AuthentifiedUser{Username: "foo"})
 	if err != nil {
 		t.Fatalf("cannot delete var1 from project: %s", err)
 	}
-	varTest, err := project.GetVariableInProject(api.mustDB(), project1.ID, var1.Name)
-	if varTest.Value != "" {
-		t.Fatalf("var1 should be deleted: %s", err)
+	varTest, err := project.LoadVariable(api.mustDB(), project1.ID, var1.Name)
+	if varTest != nil {
+		t.Fatalf("var1 should be deleted: %+v", varTest)
 	}
 
 	// 5. Insert new var
@@ -66,7 +66,7 @@ func TestVariableInProject(t *testing.T) {
 		Value: "value2",
 		Type:  "STRING",
 	}
-	err = project.InsertVariable(api.mustDB(), project1, var3, &sdk.AuthentifiedUser{Username: "foo"})
+	err = project.InsertVariable(api.mustDB(), project1.ID, var3, &sdk.AuthentifiedUser{Username: "foo"})
 	if err != nil {
 		t.Fatalf("cannot insert var1 in project1: %s", err)
 	}
@@ -82,7 +82,7 @@ func Test_getProjectsHandler(t *testing.T) {
 		RepositoryFullname: repofullname,
 	}
 	u, pass := assets.InsertAdminUser(t, api.mustDB())
-	test.NoError(t, application.Insert(db, api.Cache, proj, app))
+	test.NoError(t, application.Insert(db, api.Cache, *proj, app))
 
 	vars := map[string]string{}
 	uri := api.Router.GetRoute("GET", api.getProjectsHandler, vars)
@@ -340,7 +340,7 @@ func Test_getprojectsHandler_AsProviderWithRequestedUsername(t *testing.T) {
 	app := &sdk.Application{
 		Name: sdk.RandomString(10),
 	}
-	require.NoError(t, application.Insert(api.mustDB(), api.Cache, proj, app))
+	require.NoError(t, application.Insert(api.mustDB(), api.Cache, *proj, app))
 
 	// Call with an admin
 	sdkclientAdmin := cdsclient.NewProviderClient(cdsclient.ProviderConfig{

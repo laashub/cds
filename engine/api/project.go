@@ -45,7 +45,7 @@ func (api *API) getProjectsHandler_FilterByRepo(ctx context.Context, w http.Resp
 		ws := []sdk.Workflow{}
 		//Filter the workflow by applications
 		for i := range p.Workflows {
-			w, err := workflow.LoadByID(ctx, db, store, p, p.Workflows[i].ID, workflow.LoadOptions{})
+			w, err := workflow.LoadByID(ctx, db, store, *p, p.Workflows[i].ID, workflow.LoadOptions{})
 			if err != nil {
 				return err
 			}
@@ -371,7 +371,7 @@ func (api *API) putProjectLabelsHandler() service.Handler {
 			return err
 		}
 
-		// Check is project exist
+		// Check if project exist
 		proj, err := project.Load(db, api.Cache, key, project.LoadOptions.WithLabels)
 		if err != nil {
 			return err
@@ -546,8 +546,8 @@ func (api *API) postProjectHandler() service.Handler {
 			}
 		}
 
-		for _, v := range p.Variable {
-			if errVar := project.InsertVariable(tx, &p, &v, consumer); errVar != nil {
+		for _, v := range p.Variables {
+			if errVar := project.InsertVariable(tx, p.ID, &v, consumer); errVar != nil {
 				return sdk.WrapError(errVar, "addProjectHandler> Cannot add variable %s in project %s", v.Name, p.Name)
 			}
 		}
@@ -563,16 +563,16 @@ func (api *API) postProjectHandler() service.Handler {
 		}
 
 		if !sshExists {
-			p.Keys = append(p.Keys, sdk.ProjectKey{Key: sdk.Key{
+			p.Keys = append(p.Keys, sdk.ProjectKey{
 				Type: sdk.KeyTypeSSH,
 				Name: fmt.Sprintf("proj-%s-%s", sdk.KeyTypeSSH, strings.ToLower(p.Key))},
-			})
+			)
 		}
 		if !gpgExists {
-			p.Keys = append(p.Keys, sdk.ProjectKey{Key: sdk.Key{
+			p.Keys = append(p.Keys, sdk.ProjectKey{
 				Type: sdk.KeyTypePGP,
 				Name: fmt.Sprintf("proj-%s-%s", sdk.KeyTypePGP, strings.ToLower(p.Key))},
-			})
+			)
 		}
 		for i := range p.Keys {
 			k := &p.Keys[i]
@@ -583,13 +583,18 @@ func (api *API) postProjectHandler() service.Handler {
 				if errK != nil {
 					return sdk.WrapError(errK, "addProjectHandler> Cannot generate ssh key for project %s", p.Name)
 				}
-				k.Key = keyTemp
+				k.Private = keyTemp.Private
+				k.Public = keyTemp.Public
+				k.Type = keyTemp.Type
 			case sdk.KeyTypePGP:
 				keyTemp, errK := keys.GeneratePGPKeyPair(k.Name)
 				if errK != nil {
 					return sdk.WrapError(errK, "addProjectHandler> Cannot generate pgp key for project %s", p.Name)
 				}
-				k.Key = keyTemp
+				k.Private = keyTemp.Private
+				k.Public = keyTemp.Public
+				k.Type = keyTemp.Type
+				k.KeyID = keyTemp.KeyID
 			}
 			if errK := project.InsertKey(tx, k); errK != nil {
 				return sdk.WrapError(errK, "addProjectHandler> Cannot add key %s in project %s", k.Name, p.Name)

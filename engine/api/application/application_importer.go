@@ -13,7 +13,7 @@ import (
 )
 
 //Import is able to create a new application and all its components
-func Import(ctx context.Context, db gorp.SqlExecutor, store cache.Store, proj *sdk.Project, app *sdk.Application, repomanager string, u sdk.Identifiable, msgChan chan<- sdk.Message) error {
+func Import(ctx context.Context, db gorp.SqlExecutor, store cache.Store, proj sdk.Project, app *sdk.Application, repomanager string, u sdk.Identifiable, msgChan chan<- sdk.Message) error {
 	doUpdate, erre := Exists(db, proj.Key, app.Name)
 	if erre != nil {
 		return sdk.WrapError(erre, "application.Import> Unable to check if application exists")
@@ -33,7 +33,7 @@ func Import(ctx context.Context, db gorp.SqlExecutor, store cache.Store, proj *s
 			return sdk.WrapError(errlo, "application.Import> Unable to load application by name: %s", app.Name)
 		}
 		//Delete all Variables
-		if err := DeleteAllVariable(db, oldApp.ID); err != nil {
+		if err := DeleteAllVariables(db, oldApp.ID); err != nil {
 			return sdk.WrapError(err, "Cannot delete application variable")
 		}
 
@@ -64,7 +64,7 @@ func Import(ctx context.Context, db gorp.SqlExecutor, store cache.Store, proj *s
 		}
 	}
 
-	if err := importVariables(db, store, proj, app, u, msgChan); err != nil {
+	if err := importVariables(db, store, app, u, msgChan); err != nil {
 		return err
 	}
 
@@ -110,19 +110,15 @@ func Import(ctx context.Context, db gorp.SqlExecutor, store cache.Store, proj *s
 }
 
 //importVariables is able to create variable on an existing application
-func importVariables(db gorp.SqlExecutor, store cache.Store, proj *sdk.Project, app *sdk.Application, u sdk.Identifiable, msgChan chan<- sdk.Message) error {
-	for _, newVar := range app.Variable {
-		var errCreate error
-		switch newVar.Type {
-		case sdk.KeyVariable:
-			errCreate = AddKeyPairToApplication_DEPRECATED(db, store, app, newVar.Name, u)
-			break
-		default:
-			errCreate = InsertVariable(db, store, app, newVar, u)
-			break
+func importVariables(db gorp.SqlExecutor, store cache.Store, app *sdk.Application, u sdk.Identifiable, msgChan chan<- sdk.Message) error {
+	for i := range app.Variables {
+		newVar := &app.Variables[i]
+		if !sdk.IsInArray(newVar.Type, sdk.AvailableVariableType) {
+			return sdk.WithStack(sdk.NewErrorFrom(sdk.ErrWrongRequest, "invalid variable type %s", newVar.Type))
 		}
-		if errCreate != nil {
-			return sdk.WrapError(errCreate, "importVariables> Cannot add variable %s in application %s:  %s", newVar.Name, app.Name, errCreate)
+
+		if err := InsertVariable(db, app.ID, newVar, u); err != nil {
+			return sdk.WrapError(err, "importVariables> Cannot add variable %s in application %s", newVar.Name, app.Name)
 		}
 	}
 

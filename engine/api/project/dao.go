@@ -154,10 +154,10 @@ func Insert(db gorp.SqlExecutor, store cache.Store, proj *sdk.Project) error {
 	}
 
 	pk := sdk.ProjectKey{}
-	pk.Key.KeyID = k.KeyID
-	pk.Key.Name = BuiltinGPGKey
-	pk.Key.Private = k.Private
-	pk.Key.Public = k.Public
+	pk.KeyID = k.KeyID
+	pk.Name = BuiltinGPGKey
+	pk.Private = k.Private
+	pk.Public = k.Public
 	pk.Type = sdk.KeyTypePGP
 	pk.ProjectID = proj.ID
 	pk.Builtin = true
@@ -191,7 +191,7 @@ func Update(db gorp.SqlExecutor, store cache.Store, proj *sdk.Project) error {
 // DeleteByID removes given project from database (project and project_group table)
 // DeleteByID also removes all pipelines inside project (pipeline and pipeline_group table).
 func DeleteByID(db gorp.SqlExecutor, id int64) error {
-	if err := deleteAllVariable(db, id); err != nil {
+	if err := DeleteAllVariables(db, id); err != nil {
 		return err
 	}
 

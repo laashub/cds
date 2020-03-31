@@ -63,8 +63,8 @@ func UpdateWorkflowRun(ctx context.Context, db gorp.SqlExecutor, wr *sdk.Workflo
 
 	wr.LastModified = time.Now()
 	for _, info := range wr.Infos {
-		if info.IsError && info.SubNumber == wr.LastSubNumber {
-			wr.Status = string(sdk.StatusFail)
+		if info.Type == sdk.RunInfoTypeError && info.SubNumber == wr.LastSubNumber {
+			wr.Status = sdk.StatusFail
 		}
 	}
 
@@ -439,13 +439,13 @@ func loadRun(db gorp.SqlExecutor, loadOpts LoadRunOptions, query string, args ..
 	runDB := &Run{}
 	if err := db.SelectOne(runDB, query, args...); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, sdk.ErrWorkflowNotFound
+			return nil, sdk.WithStack(sdk.ErrNotFound)
 		}
 		return nil, sdk.WrapError(err, "Unable to load workflow run. query:%s args:%v", query, args)
 	}
 	wr := sdk.WorkflowRun(*runDB)
 	if !loadOpts.WithDeleted && wr.ToDelete {
-		return nil, sdk.WithStack(sdk.ErrWorkflowNotFound)
+		return nil, sdk.WithStack(sdk.ErrNotFound)
 	}
 
 	tags, errT := loadTagsByRunID(db, wr.ID)
@@ -998,9 +998,9 @@ func stopRunsBlocked(ctx context.Context, db *gorp.DbMap) error {
 	}
 
 	resp := []struct {
-		ID     int64  `db:"id"`
-		Status string `db:"status"`
-		Stages string `db:"stages"`
+		ID     int64          `db:"id"`
+		Status string         `db:"status"`
+		Stages sql.NullString `db:"stages"`
 	}{}
 
 	querySelectNodeRuns := `
@@ -1018,8 +1018,10 @@ func stopRunsBlocked(ctx context.Context, db *gorp.DbMap) error {
 			ID:     resp[i].ID,
 			Status: resp[i].Status,
 		}
-		if err := json.Unmarshal([]byte(resp[i].Stages), &nr.Stages); err != nil {
-			return sdk.WrapError(err, "cannot unmarshal stages")
+		if resp[i].Stages.Valid {
+			if err := json.Unmarshal([]byte(resp[i].Stages.String), &nr.Stages); err != nil {
+				return sdk.WrapError(err, "cannot unmarshal stages")
+			}
 		}
 
 		stopWorkflowNodeRunStages(ctx, db, &nr)

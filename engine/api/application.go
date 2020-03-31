@@ -208,7 +208,7 @@ func (api *API) getApplicationVCSInfosHandler() service.Handler {
 			return service.WriteJSON(w, resp, http.StatusOK)
 		}
 
-		vcsServer := repositoriesmanager.GetProjectVCSServer(proj, app.VCSServer)
+		vcsServer := repositoriesmanager.GetProjectVCSServer(*proj, app.VCSServer)
 		client, erra := repositoriesmanager.AuthorizedClient(ctx, api.mustDB(), api.Cache, projectKey, vcsServer)
 		if erra != nil {
 			return sdk.WrapError(sdk.ErrNoReposManagerClientAuth, "getApplicationVCSInfosHandler> Cannot get client got %s %s : %s", projectKey, app.VCSServer, erra)
@@ -269,7 +269,7 @@ func (api *API) addApplicationHandler() service.Handler {
 
 		defer tx.Rollback() // nolint
 
-		if err := application.Insert(tx, api.Cache, proj, &app); err != nil {
+		if err := application.Insert(tx, api.Cache, *proj, &app); err != nil {
 			return sdk.WrapError(err, "Cannot insert pipeline")
 		}
 
@@ -359,7 +359,7 @@ func (api *API) cloneApplicationHandler() service.Handler {
 		}
 		defer tx.Rollback() // nolint
 
-		if err := cloneApplication(ctx, tx, api.Cache, proj, &newApp, appToClone); err != nil {
+		if err := cloneApplication(ctx, tx, api.Cache, *proj, &newApp, appToClone); err != nil {
 			return sdk.WrapError(err, "Cannot insert new application %s", newApp.Name)
 		}
 
@@ -372,39 +372,37 @@ func (api *API) cloneApplicationHandler() service.Handler {
 }
 
 // cloneApplication Clone an application with all her dependencies: pipelines, permissions, triggers
-func cloneApplication(ctx context.Context, db gorp.SqlExecutor, store cache.Store, proj *sdk.Project, newApp *sdk.Application, appToClone *sdk.Application) error {
+func cloneApplication(ctx context.Context, db gorp.SqlExecutor, store cache.Store, proj sdk.Project, newApp *sdk.Application, appToClone *sdk.Application) error {
 	// Create Application
 	if err := application.Insert(db, store, proj, newApp); err != nil {
 		return err
 	}
 
 	var variablesToDelete []string
-	for _, v := range newApp.Variable {
+	for _, v := range newApp.Variables {
 		if v.Type == sdk.KeyVariable {
 			variablesToDelete = append(variablesToDelete, fmt.Sprintf("%s.pub", v.Name))
 		}
 	}
 
 	for _, vToDelete := range variablesToDelete {
-		for i := range newApp.Variable {
-			if vToDelete == newApp.Variable[i].Name {
-				newApp.Variable = append(newApp.Variable[:i], newApp.Variable[i+1:]...)
+		for i := range newApp.Variables {
+			if vToDelete == newApp.Variables[i].Name {
+				newApp.Variables = append(newApp.Variables[:i], newApp.Variables[i+1:]...)
 				break
 			}
 		}
 	}
 
-	// Insert variable
-	for _, v := range newApp.Variable {
-		var errVar error
-		// If variable is a key variable, generate a new one for this application
-		if v.Type == sdk.KeyVariable {
-			errVar = application.AddKeyPairToApplication_DEPRECATED(db, store, newApp, v.Name, getAPIConsumer(ctx))
-		} else {
-			errVar = application.InsertVariable(db, store, newApp, v, getAPIConsumer(ctx))
+	// Insert variables
+	for i := range newApp.Variables {
+		newVar := &newApp.Variables[i]
+		if !sdk.IsInArray(newVar.Type, sdk.AvailableVariableType) {
+			return sdk.WithStack(sdk.NewErrorFrom(sdk.ErrWrongRequest, "invalid variable type %s", newVar.Type))
 		}
-		if errVar != nil {
-			return errVar
+
+		if err := application.InsertVariable(db, newApp.ID, newVar, getAPIConsumer(ctx)); err != nil {
+			return sdk.WrapError(err, "cloneApplication> Cannot add variable %s in application %s", newVar.Name, newApp.Name)
 		}
 	}
 

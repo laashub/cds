@@ -26,11 +26,11 @@ func Test_ProjectPerms(t *testing.T) {
 		ProjectKey: proj.Key,
 		Name:       "pip1",
 	}
-	test.NoError(t, pipeline.InsertPipeline(api.mustDB(), api.Cache, proj, &pip))
+	test.NoError(t, pipeline.InsertPipeline(api.mustDB(), &pip))
 
 	newWf := sdk.Workflow{
 		Name: sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,

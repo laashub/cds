@@ -206,7 +206,7 @@ func (n *Node) maps(m map[int64]*Node) map[int64]*Node {
 	return m
 }
 
-func (n *Node) Ancestors(w *WorkflowData) []int64 {
+func (n *Node) Ancestors(w WorkflowData) []int64 {
 	if n == nil {
 		return nil
 	}
@@ -266,7 +266,7 @@ func (n *Node) IsLinkedToRepo(w *Workflow) bool {
 }
 
 // CheckApplicationDeploymentStrategies checks application deployment strategies
-func (n Node) CheckApplicationDeploymentStrategies(proj *Project, w *Workflow) error {
+func (n Node) CheckApplicationDeploymentStrategies(proj Project, w *Workflow) error {
 	if n.Context == nil {
 		return nil
 	}

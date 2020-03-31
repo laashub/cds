@@ -138,15 +138,25 @@ func (g *githubClient) PullRequests(ctx context.Context, fullname string) ([]sdk
 }
 
 // PullRequestComment push a new comment on a pull request
-func (g *githubClient) PullRequestComment(ctx context.Context, repo string, id int, text string) error {
+func (g *githubClient) PullRequestComment(ctx context.Context, repo string, prReq sdk.VCSPullRequestCommentRequest) error {
 	if g.DisableStatus {
 		log.Warning(ctx, "github.PullRequestComment>  ⚠ Github statuses are disabled")
 		return nil
 	}
 
-	path := fmt.Sprintf("/repos/%s/issues/%d/comments", repo, id)
+	canWrite, err := g.UserHasWritePermission(ctx, repo)
+	if err != nil {
+		return err
+	}
+	if !canWrite {
+		if err := g.GrantWritePermission(ctx, repo); err != nil {
+			return err
+		}
+	}
+
+	path := fmt.Sprintf("/repos/%s/issues/%d/comments", repo, prReq.ID)
 	payload := map[string]string{
-		"body": text,
+		"body": prReq.Message,
 	}
 	values, _ := json.Marshal(payload)
 	res, err := g.post(path, "application/json", bytes.NewReader(values), &postOptions{skipDefaultBaseURL: false, asUser: true})
@@ -171,6 +181,16 @@ func (g *githubClient) PullRequestComment(ctx context.Context, repo string, id i
 }
 
 func (g *githubClient) PullRequestCreate(ctx context.Context, repo string, pr sdk.VCSPullRequest) (sdk.VCSPullRequest, error) {
+	canWrite, err := g.UserHasWritePermission(ctx, repo)
+	if err != nil {
+		return sdk.VCSPullRequest{}, nil
+	}
+	if !canWrite {
+		if err := g.GrantWritePermission(ctx, repo); err != nil {
+			return sdk.VCSPullRequest{}, nil
+		}
+	}
+
 	path := fmt.Sprintf("/repos/%s/pulls", repo)
 	payload := map[string]string{
 		"title": pr.Title,

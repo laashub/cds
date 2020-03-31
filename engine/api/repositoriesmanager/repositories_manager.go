@@ -73,7 +73,7 @@ func (c *vcsClient) Cache() *gocache.Cache {
 }
 
 // GetProjectVCSServer returns sdk.ProjectVCSServer for a project
-func GetProjectVCSServer(p *sdk.Project, name string) *sdk.ProjectVCSServer {
+func GetProjectVCSServer(p sdk.Project, name string) *sdk.ProjectVCSServer {
 	if name == "" {
 		return nil
 	}
@@ -82,7 +82,6 @@ func GetProjectVCSServer(p *sdk.Project, name string) *sdk.ProjectVCSServer {
 			return &v
 		}
 	}
-
 	return nil
 }
 
@@ -130,7 +129,7 @@ func (c *vcsConsumer) AuthorizeToken(ctx context.Context, token string, secret s
 }
 
 func (c *vcsConsumer) GetAuthorizedClient(ctx context.Context, token, secret string, created int64) (sdk.VCSAuthorizedClient, error) {
-	s := GetProjectVCSServer(c.proj, c.name)
+	s := GetProjectVCSServer(*c.proj, c.name)
 	if s == nil {
 		return nil, sdk.ErrNoReposManagerClientAuth
 	}
@@ -396,8 +395,8 @@ func (c *vcsClient) PullRequests(ctx context.Context, fullname string) ([]sdk.VC
 	return prs, nil
 }
 
-func (c *vcsClient) PullRequestComment(ctx context.Context, fullname string, id int, body string) error {
-	path := fmt.Sprintf("/vcs/%s/repos/%s/pullrequests/%d/comments", c.name, fullname, id)
+func (c *vcsClient) PullRequestComment(ctx context.Context, fullname string, body sdk.VCSPullRequestCommentRequest) error {
+	path := fmt.Sprintf("/vcs/%s/repos/%s/pullrequests/comments", c.name, fullname)
 	if _, err := c.doJSONRequest(ctx, "POST", path, body, nil); err != nil {
 		return sdk.WrapError(err, "unable to post pullrequest comments on repository %s from %s", fullname, c.name)
 	}

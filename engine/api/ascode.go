@@ -14,8 +14,10 @@ import (
 	"github.com/ovh/cds/engine/api/project"
 	"github.com/ovh/cds/engine/api/repositoriesmanager"
 	"github.com/ovh/cds/engine/api/workflow"
+	"github.com/ovh/cds/engine/api/workflowtemplate"
 	"github.com/ovh/cds/engine/service"
 	"github.com/ovh/cds/sdk"
+	"github.com/ovh/cds/sdk/exportentities"
 	"github.com/ovh/cds/sdk/log"
 )
 
@@ -31,7 +33,7 @@ func (api *API) postImportAsCodeHandler() service.Handler {
 
 		var ope = new(sdk.Operation)
 		if err := service.UnmarshalBody(r, ope); err != nil {
-			return sdk.WrapError(err, "postImportAsCodeHandler")
+			return err
 		}
 
 		if ope.URL == "" {
@@ -46,20 +48,21 @@ func (api *API) postImportAsCodeHandler() service.Handler {
 			return sdk.WithStack(sdk.ErrWrongRequest)
 		}
 
-		p, errP := project.Load(api.mustDB(), api.Cache, key, project.LoadOptions.WithFeatures, project.LoadOptions.WithClearKeys)
-		if errP != nil {
-			sdk.WrapError(errP, "postImportAsCodeHandler> Cannot load project")
+		p, err := project.Load(api.mustDB(), api.Cache, key, project.LoadOptions.WithFeatures, project.LoadOptions.WithClearKeys)
+		if err != nil {
+			return sdk.WrapError(err, "cannot load project")
 		}
 
-		vcsServer := repositoriesmanager.GetProjectVCSServer(p, ope.VCSServer)
-		client, erra := repositoriesmanager.AuthorizedClient(ctx, api.mustDB(), api.Cache, p.Key, vcsServer)
-		if erra != nil {
-			return sdk.WrapError(sdk.ErrNoReposManagerClientAuth, "postImportAsCodeHandler> Cannot get client for %s %s : %s", key, ope.VCSServer, erra)
+		vcsServer := repositoriesmanager.GetProjectVCSServer(*p, ope.VCSServer)
+		client, err := repositoriesmanager.AuthorizedClient(ctx, api.mustDB(), api.Cache, p.Key, vcsServer)
+		if err != nil {
+			return sdk.NewErrorWithStack(err,
+				sdk.NewErrorFrom(sdk.ErrNoReposManagerClientAuth, "cannot get client for %s %s", key, ope.VCSServer))
 		}
 
-		branches, errB := client.Branches(ctx, ope.RepoFullName)
-		if errB != nil {
-			return sdk.WrapError(errB, "postImportAsCodeHandler> Cannot list branches for %s/%s", ope.VCSServer, ope.RepoFullName)
+		branches, err := client.Branches(ctx, ope.RepoFullName)
+		if err != nil {
+			return sdk.WrapError(err, "cannot list branches for %s/%s", ope.VCSServer, ope.RepoFullName)
 		}
 		for _, b := range branches {
 			if b.Default {
@@ -69,7 +72,7 @@ func (api *API) postImportAsCodeHandler() service.Handler {
 		}
 
 		if err := operation.PostRepositoryOperation(ctx, api.mustDB(), *p, ope, nil); err != nil {
-			return sdk.WrapError(err, "Cannot create repository operation")
+			return sdk.WrapError(err, "cannot create repository operation")
 		}
 		ope.RepositoryStrategy.SSHKeyContent = ""
 
@@ -148,15 +151,33 @@ func (api *API) postPerformImportAsCodeHandler() service.Handler {
 			IsDefaultBranch:    ope.Setup.Checkout.Branch == ope.RepositoryInfo.DefaultBranch,
 		}
 
-		allMsg, wrkflw, _, err := workflow.Push(ctx, api.mustDB(), api.Cache, proj, tr, opt, getAPIConsumer(ctx), project.DecryptWithBuiltinKey)
+		data, err := exportentities.UntarWorkflowComponents(ctx, tr)
 		if err != nil {
-			return sdk.WrapError(err, "Unable to push workflow")
+			return err
+		}
+
+		consumer := getAPIConsumer(ctx)
+
+		var mods []workflowtemplate.TemplateRequestModifierFunc
+		if !opt.IsDefaultBranch {
+			mods = append(mods, workflowtemplate.TemplateRequestModifiers.Detached)
+		}
+		wti, err := workflowtemplate.CheckAndExecuteTemplate(ctx, api.mustDB(), *consumer, *proj, &data, mods...)
+		if err != nil {
+			return err
+		}
+		allMsg, wrkflw, _, err := workflow.Push(ctx, api.mustDB(), api.Cache, proj, data, opt, getAPIConsumer(ctx), project.DecryptWithBuiltinKey)
+		if err != nil {
+			return sdk.WrapError(err, "unable to push workflow")
+		}
+		if err := workflowtemplate.UpdateTemplateInstanceWithWorkflow(ctx, api.mustDB(), *wrkflw, *consumer, wti); err != nil {
+			return err
 		}
 		msgListString := translate(r, allMsg)
 
 		// Grant CDS as a repository collaborator
 		// TODO for this moment, this step is not mandatory. If it's failed, continue the ascode process
-		vcsServer := repositoriesmanager.GetProjectVCSServer(proj, ope.VCSServer)
+		vcsServer := repositoriesmanager.GetProjectVCSServer(*proj, ope.VCSServer)
 		client, erra := repositoriesmanager.AuthorizedClient(ctx, api.mustDB(), api.Cache, proj.Key, vcsServer)
 		if erra != nil {
 			log.Error(ctx, "postPerformImportAsCodeHandler> Cannot get client for %s %s : %s", proj.Key, ope.VCSServer, erra)
@@ -214,7 +235,7 @@ func (api *API) postResyncPRAsCodeHandler() service.Handler {
 			}
 		}
 
-		if _, _, err := sync.SyncAsCodeEvent(ctx, api.mustDB(), api.Cache, proj, app, getAPIConsumer(ctx).AuthentifiedUser); err != nil {
+		if _, _, err := sync.SyncAsCodeEvent(ctx, api.mustDB(), api.Cache, *proj, *app, getAPIConsumer(ctx).AuthentifiedUser); err != nil {
 			return err
 		}
 		return nil

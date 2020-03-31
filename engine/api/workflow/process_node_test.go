@@ -167,7 +167,7 @@ func TestHookRunWithoutPayloadProcessNodeBuildParameter(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -197,7 +197,7 @@ func TestHookRunWithoutPayloadProcessNodeBuildParameter(t *testing.T) {
 		"git.repository": "sguiheux/demo",
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var hookEvent sdk.WorkflowNodeRunHookEvent
@@ -212,7 +212,7 @@ func TestHookRunWithoutPayloadProcessNodeBuildParameter(t *testing.T) {
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 1, len(wr.WorkflowNodeRuns))
@@ -349,7 +349,7 @@ func TestHookRunWithHashOnlyProcessNodeBuildParameter(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -379,7 +379,7 @@ func TestHookRunWithHashOnlyProcessNodeBuildParameter(t *testing.T) {
 		"git.repository": "sguiheux/demo",
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var hookEvent sdk.WorkflowNodeRunHookEvent
@@ -396,7 +396,7 @@ func TestHookRunWithHashOnlyProcessNodeBuildParameter(t *testing.T) {
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 1, len(wr.WorkflowNodeRuns))
@@ -515,7 +515,7 @@ func TestManualRunWithPayloadProcessNodeBuildParameter(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -533,7 +533,7 @@ func TestManualRunWithPayloadProcessNodeBuildParameter(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -549,7 +549,7 @@ func TestManualRunWithPayloadProcessNodeBuildParameter(t *testing.T) {
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 1, len(wr.WorkflowNodeRuns))
@@ -660,7 +660,7 @@ func TestManualRunBranchAndCommitInPayloadProcessNodeBuildParameter(t *testing.T
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -678,7 +678,7 @@ func TestManualRunBranchAndCommitInPayloadProcessNodeBuildParameter(t *testing.T
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -695,7 +695,7 @@ func TestManualRunBranchAndCommitInPayloadProcessNodeBuildParameter(t *testing.T
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 1, len(wr.WorkflowNodeRuns))
@@ -874,7 +874,7 @@ func TestManualRunBranchAndRepositoryInPayloadProcessNodeBuildParameter(t *testi
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -905,7 +905,7 @@ func TestManualRunBranchAndRepositoryInPayloadProcessNodeBuildParameter(t *testi
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -922,7 +922,7 @@ func TestManualRunBranchAndRepositoryInPayloadProcessNodeBuildParameter(t *testi
 	wr.Workflow = w
 
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	mapParams := sdk.ParametersToMap(wr.WorkflowNodeRuns[w.WorkflowData.Node.ID][0].BuildParameters)
@@ -1096,7 +1096,7 @@ func TestManualRunBuildParameterMultiApplication(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -1139,7 +1139,7 @@ func TestManualRunBuildParameterMultiApplication(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -1156,7 +1156,7 @@ func TestManualRunBuildParameterMultiApplication(t *testing.T) {
 
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 3, len(wr.WorkflowNodeRuns))
@@ -1301,7 +1301,7 @@ func TestGitParamOnPipelineWithoutApplication(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -1331,7 +1331,7 @@ func TestGitParamOnPipelineWithoutApplication(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -1347,7 +1347,7 @@ func TestGitParamOnPipelineWithoutApplication(t *testing.T) {
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	// Load run
@@ -1485,7 +1485,7 @@ func TestGitParamOnApplicationWithoutRepo(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -1516,7 +1516,7 @@ func TestGitParamOnApplicationWithoutRepo(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -1532,7 +1532,7 @@ func TestGitParamOnApplicationWithoutRepo(t *testing.T) {
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 2, len(wr.WorkflowNodeRuns))
@@ -1680,7 +1680,7 @@ func TestGitParamOn2ApplicationSameRepo(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -1711,7 +1711,7 @@ func TestGitParamOn2ApplicationSameRepo(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -1728,7 +1728,7 @@ func TestGitParamOn2ApplicationSameRepo(t *testing.T) {
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 2, len(wr.WorkflowNodeRuns))
@@ -1879,7 +1879,7 @@ func TestGitParamWithJoin(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Ref:  "root",
@@ -1921,7 +1921,7 @@ func TestGitParamWithJoin(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -1938,7 +1938,7 @@ func TestGitParamWithJoin(t *testing.T) {
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 3, len(wr.WorkflowNodeRuns))
@@ -2098,7 +2098,7 @@ func TestGitParamOn2ApplicationSameRepoWithFork(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Ref:  "root",
@@ -2138,7 +2138,7 @@ func TestGitParamOn2ApplicationSameRepoWithFork(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -2155,7 +2155,7 @@ func TestGitParamOn2ApplicationSameRepoWithFork(t *testing.T) {
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 3, len(wr.WorkflowNodeRuns))
@@ -2291,7 +2291,7 @@ func TestManualRunWithPayloadAndRunCondition(t *testing.T) {
 		ProjectID:  proj.ID,
 		ProjectKey: proj.Key,
 		Name:       sdk.RandomString(10),
-		WorkflowData: &sdk.WorkflowData{
+		WorkflowData: sdk.WorkflowData{
 			Node: sdk.Node{
 				Name: "root",
 				Type: sdk.NodeTypePipeline,
@@ -2330,7 +2330,7 @@ func TestManualRunWithPayloadAndRunCondition(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, &w, proj))
+	assert.NoError(t, workflow.Insert(context.TODO(), db, cache, *proj, &w))
 
 	// CREATE RUN
 	var manualEvent sdk.WorkflowNodeRunManual
@@ -2346,7 +2346,7 @@ func TestManualRunWithPayloadAndRunCondition(t *testing.T) {
 	wr.Workflow = w
 	consumer, _ := authentication.LoadConsumerByTypeAndUserID(context.TODO(), db, sdk.ConsumerLocal, u.ID, authentication.LoadConsumerOptions.WithAuthentifiedUser)
 
-	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, proj, wr, opts, consumer, nil)
+	_, errR := workflow.StartWorkflowRun(context.TODO(), db, cache, *proj, wr, opts, consumer, nil)
 	assert.NoError(t, errR)
 
 	assert.Equal(t, 2, len(wr.WorkflowNodeRuns))
@@ -2372,7 +2372,7 @@ func createEmptyPipeline(t *testing.T, db gorp.SqlExecutor, cache cache.Store, p
 			},
 		},
 	}
-	assert.NoError(t, pipeline.Import(context.TODO(), db, cache, proj, pip, nil, u))
+	assert.NoError(t, pipeline.Import(context.TODO(), db, cache, *proj, pip, nil, u))
 	var errPip error
 	pip, errPip = pipeline.LoadPipeline(context.TODO(), db, proj.Key, pip.Name, true)
 	assert.NoError(t, errPip)
@@ -2440,7 +2440,7 @@ func createBuildPipeline(t *testing.T, db gorp.SqlExecutor, cache cache.Store, p
 			},
 		},
 	}
-	assert.NoError(t, pipeline.Import(context.TODO(), db, cache, proj, pip, nil, u))
+	assert.NoError(t, pipeline.Import(context.TODO(), db, cache, *proj, pip, nil, u))
 	var errPip error
 	pip, errPip = pipeline.LoadPipeline(context.TODO(), db, proj.Key, pip.Name, true)
 	assert.NoError(t, errPip)
@@ -2457,7 +2457,7 @@ vcs_ssh_key: proj-blabla
 `
 	var eapp = new(exportentities.Application)
 	assert.NoError(t, yaml.Unmarshal([]byte(appS), eapp))
-	app, _, globalError := application.ParseAndImport(context.Background(), db, cache, proj, eapp, application.ImportOptions{Force: true}, nil, u)
+	app, _, globalError := application.ParseAndImport(context.Background(), db, cache, *proj, eapp, application.ImportOptions{Force: true}, nil, u)
 	assert.NoError(t, globalError)
 	return app
 }
@@ -2472,7 +2472,7 @@ vcs_ssh_key: proj-bloublou
 `
 	var eapp = new(exportentities.Application)
 	assert.NoError(t, yaml.Unmarshal([]byte(appS), eapp))
-	app, _, globalError := application.ParseAndImport(context.Background(), db, cache, proj, eapp, application.ImportOptions{Force: true}, nil, u)
+	app, _, globalError := application.ParseAndImport(context.Background(), db, cache, *proj, eapp, application.ImportOptions{Force: true}, nil, u)
 	assert.NoError(t, globalError)
 	return app
 }
@@ -2487,7 +2487,7 @@ vcs_ssh_key: proj-blabla
 `
 	var eapp = new(exportentities.Application)
 	assert.NoError(t, yaml.Unmarshal([]byte(appS), eapp))
-	app, _, globalError := application.ParseAndImport(context.Background(), db, cache, proj, eapp, application.ImportOptions{Force: true}, nil, u)
+	app, _, globalError := application.ParseAndImport(context.Background(), db, cache, *proj, eapp, application.ImportOptions{Force: true}, nil, u)
 	assert.NoError(t, globalError)
 	return app
 }
@@ -2499,7 +2499,7 @@ name: app-no-repo
 `
 	var eapp = new(exportentities.Application)
 	assert.NoError(t, yaml.Unmarshal([]byte(appS), eapp))
-	app, _, globalError := application.ParseAndImport(context.Background(), db, cache, proj, eapp, application.ImportOptions{Force: true}, nil, u)
+	app, _, globalError := application.ParseAndImport(context.Background(), db, cache, *proj, eapp, application.ImportOptions{Force: true}, nil, u)
 	assert.NoError(t, globalError)
 	return app
 }
